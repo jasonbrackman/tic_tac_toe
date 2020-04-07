@@ -18,7 +18,7 @@ class TicTacToe:
     # __ Validators
     def is_position_valid(self, pos):
         # must be a digit
-        if pos.isdigit() is False:
+        if str(pos).isdigit() is False:
             return False
 
         # must be in range and not a position already filled
@@ -124,25 +124,31 @@ class TicTacToe:
         return row, col
 
     # __ Work
-    def play(self):
+    def play(self, response=None):
+        played = True
+
         if self.turn % 2 == 0:
-            response = input("Select a number from 1 to 9: ")
+            if response is None:
+                response = input("Select a number from 1 to 9: ")
 
             if self.is_position_valid(response):
                 row, col = self.convert_input_to_pos(response)
 
                 self.cells[row][col] = self.user
                 self.turn += 1
-                return
-
-            print("Unexpected input or space already occupied for >> {}".format(response))
-            self.play()
+            else:
+                played = False
+            #
+            # print("Unexpected input or space already occupied for >> {}".format(response))
+            # self.play()
 
         else:
             options = self.available_positions()
             if options:
                 self.ai_minimax(options)
                 # self.ai_random(options)
+
+        return played
 
     def draw(self):
         """
