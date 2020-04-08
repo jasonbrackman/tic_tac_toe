@@ -1,8 +1,19 @@
 import sys
+from collections import namedtuple
 
 import pygame
+import pygame.freetype
 
 from tic_tac_toe import TicTacToe
+
+colour_data_t = namedtuple("colours", "red blue green gray black")
+COLOURS = colour_data_t(
+    red=(255, 127, 127),
+    blue=(127, 127, 255),
+    green=(127, 255, 127),
+    gray=(127, 127, 127),
+    black=(0, 0, 0),
+)
 
 
 def main():
@@ -44,20 +55,27 @@ def get_icons(ttt):
     icons = []
     for i in range(3):
         for j in range(3):
-            icon = (127, 127, 127)
-            if ttt.cells[j][i] == 'X':
-                icon = (127, 255, 127)
-            if ttt.cells[j][i] == 'O':
-                icon = (255, 127, 127)
+            icon = COLOURS.gray
+            if ttt.cells[j][i] == "X":
+                icon = COLOURS.green
+            if ttt.cells[j][i] == "O":
+                icon = COLOURS.red
             icons.append(icon)
 
     return icons
 
 
 def draw_board(screen, ttt, blocks):
+    font = pygame.freetype.SysFont('Times New Roman', 30)
     icons = get_icons(ttt)
     for block, icon in zip(blocks, icons):
         pygame.draw.rect(screen, icon, block)
+
+        if icon is not COLOURS.gray:
+            text = 'X' if icon is COLOURS.green else 'O'
+            x = block.x + 32
+            y = block.y + 32
+            font.render_to(screen, (x, y), text, COLOURS.black, size=50)
 
 
 def main_pg():
