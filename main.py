@@ -66,7 +66,7 @@ def get_rect_index(blocks, pos):
 
 
 def draw_board(screen, ttt, blocks, mute_pos=-1):
-    font = pygame.freetype.SysFont('Times New Roman', 30)
+    font = pygame.freetype.SysFont(None, 30)  # very slow to load first time
     icons = get_icons(ttt)
     for index, (block, icon) in enumerate(zip(blocks, icons), 1):
 
@@ -76,8 +76,8 @@ def draw_board(screen, ttt, blocks, mute_pos=-1):
         pygame.draw.rect(screen, icon, block)
 
         if icon is not COLOURS.gray:
-            # render the gamepiece text
-            text = 'X' if icon is COLOURS.green else 'O'
+            # render the player text
+            text = "X" if icon is COLOURS.green else "O"
             x = block.x + 22
             y = block.y + 22
             font.render_to(screen, (x, y), text, COLOURS.black, size=75)
@@ -85,8 +85,12 @@ def draw_board(screen, ttt, blocks, mute_pos=-1):
 
 def main_pg():
     ttt = TicTacToe()
+
     pygame.init()
-    pygame.display.set_caption('Tic Tac Toe')
+    pygame.display.set_caption("Tic Tac Toe")
+
+    # Hack: Loads before game window as it can take a very long time on my MacOs Catalina 10.15.4
+    pygame.freetype.SysFont(None, 30)
 
     # default background
     screen_w = 300
@@ -97,9 +101,6 @@ def main_pg():
     blocks = get_blocks(93, 93, 5)
 
     while ttt.is_game_finished() is None:
-        draw_board(screen, ttt, blocks)
-        pygame.display.flip()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -113,7 +114,7 @@ def main_pg():
                     for x in range(7):
                         # blink will either blink the square or choose a number
                         # outside of the range of blocks to blink; negating its role.
-                        blink = len(blocks) if x % 2 == 0 else 0
+                        blink = 10 if x % 2 == 0 else 0
                         draw_board(screen, ttt, blocks, rect_index + blink)
                         pygame.display.flip()
                         pygame.event.pump()
@@ -122,9 +123,10 @@ def main_pg():
                     # play as AI
                     ttt.play(-1)
 
-    # # Draw last state of board
-    draw_board(screen, ttt, blocks)
-    pygame.display.flip()
+            draw_board(screen, ttt, blocks)
+            pygame.display.flip()
+
+    # Ensure last state of board is drawn
     pygame.event.pump()
 
     # Display a winner/loser/tie screen
