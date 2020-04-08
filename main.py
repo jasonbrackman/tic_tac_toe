@@ -32,14 +32,6 @@ def main():
             break
 
 
-def draw_error(screen, ttt, blocks, pos):
-    icons = get_icons(ttt)
-    for index, (block, icon) in enumerate(zip(blocks, icons), 1):
-        if index == pos:
-            icon = (20, 20, 20)
-        pygame.draw.rect(screen, icon, block)
-
-
 def get_blocks(width, height, margin):
     blocks = []
     for i in range(3):
@@ -65,22 +57,36 @@ def get_icons(ttt):
     return icons
 
 
-def draw_board(screen, ttt, blocks):
+def get_rect_index(blocks, pos):
+    needle = 0
+    for index, block in enumerate(blocks, 1):
+        if block.collidepoint(*pos):
+            needle = index
+    return needle
+
+
+def draw_board(screen, ttt, blocks, mute_pos=-1):
     font = pygame.freetype.SysFont('Times New Roman', 30)
     icons = get_icons(ttt)
-    for block, icon in zip(blocks, icons):
+    for index, (block, icon) in enumerate(zip(blocks, icons), 1):
+
+        if index == mute_pos:
+            # mute the following position if passed in
+            icon = (20, 20, 20)
         pygame.draw.rect(screen, icon, block)
 
         if icon is not COLOURS.gray:
+            # render the gamepiece text
             text = 'X' if icon is COLOURS.green else 'O'
-            x = block.x + 32
-            y = block.y + 32
-            font.render_to(screen, (x, y), text, COLOURS.black, size=50)
+            x = block.x + 22
+            y = block.y + 22
+            font.render_to(screen, (x, y), text, COLOURS.black, size=75)
 
 
 def main_pg():
     ttt = TicTacToe()
     pygame.init()
+    pygame.display.set_caption('Tic Tac Toe')
 
     # default background
     screen_w = 300
@@ -94,25 +100,27 @@ def main_pg():
         draw_board(screen, ttt, blocks)
         pygame.display.flip()
 
-        if ttt.turn % 2 != 0:
-            ttt.play(-1)
-        else:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    sys.exit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
 
-                if event.type == pygame.MOUSEBUTTONUP:
-                    pos = pygame.mouse.get_pos()
-                    rect_index = get_rect_index(blocks, pos)
+            if event.type == pygame.MOUSEBUTTONUP:
+                pos = pygame.mouse.get_pos()
+                rect_index = get_rect_index(blocks, pos)
 
-                    if ttt.play(rect_index) is False:
-                        # Blink rect to indicate invalid move
-                        for x in range(6):
-                            blink = 100 if x % 2 == 0 else 0
-                            draw_error(screen, ttt, blocks, rect_index + blink)
-                            pygame.display.flip()
-                            pygame.event.pump()
-                            pygame.time.wait(50)
+                if ttt.play(rect_index) is False:
+                    # Blink rect to indicate invalid move
+                    for x in range(7):
+                        # blink will either blink the square or choose a number
+                        # outside of the range of blocks to blink; negating its role.
+                        blink = len(blocks) if x % 2 == 0 else 0
+                        draw_board(screen, ttt, blocks, rect_index + blink)
+                        pygame.display.flip()
+                        pygame.event.pump()
+                        pygame.time.wait(65)
+                else:
+                    # play as AI
+                    ttt.play(-1)
 
     # # Draw last state of board
     draw_board(screen, ttt, blocks)
@@ -128,14 +136,6 @@ def main_pg():
     elif winner == -1:
         print("You Lost!")
     input("press a key to end.")
-
-
-def get_rect_index(blocks, pos):
-    needle = 0
-    for index, block in enumerate(blocks, 1):
-        if block.collidepoint(*pos):
-            needle = index
-    return needle
 
 
 if __name__ == "__main__":
