@@ -32,7 +32,7 @@ class TicTacToe:
         # checks passed, so must be good
         return True
 
-    def check_winner(self):
+    def is_game_finished(self):
         result = {
             self.user: 1,
             self.ai: -1,
@@ -95,7 +95,7 @@ class TicTacToe:
         self.turn += 1
 
     def minimax(self, depth, is_maximizing):
-        result = self.check_winner()
+        result = self.is_game_finished()
 
         # if someone won -- return the score
         if result is not None:
@@ -119,8 +119,8 @@ class TicTacToe:
     @staticmethod
     def convert_input_to_pos(response):
         index = int(response) - 1
-        row = index // 3
-        col = index % 3
+        col = index // 3
+        row = index % 3
         return row, col
 
     # __ Work

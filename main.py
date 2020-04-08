@@ -11,7 +11,7 @@ def main():
         ttt.play()
         ttt.draw()
 
-        winner = ttt.check_winner()
+        winner = ttt.is_game_finished()
         if winner is not None:
             if winner == 0:
                 print("A Tie!")
@@ -21,28 +21,43 @@ def main():
             break
 
 
-def draw_error(screen, ttt, width, height, margin, pos):
-    i, j = pos
-    new_width = i * width + i * margin + margin
-    new_height = j * height + j * margin + margin
-    block = pygame.Rect(new_width, new_height, width, height)
-    icon = (20, 20, 20)
-    pygame.draw.rect(screen, icon, block)
+def draw_error(screen, ttt, blocks, pos):
+    icons = get_icons(ttt)
+    for index, (block, icon) in enumerate(zip(blocks, icons), 1):
+        if index == pos:
+            icon = (20, 20, 20)
+        pygame.draw.rect(screen, icon, block)
 
 
-def draw_board(screen, ttt, width, height, margin):
-
+def get_blocks(width, height, margin):
+    blocks = []
     for i in range(3):
         for j in range(3):
             new_width = i * width + i * margin + margin
             new_height = j * height + j * margin + margin
-            block = pygame.Rect(new_width, new_height, width, height)
+            blocks.append(pygame.Rect(new_width, new_height, width, height))
+
+    return blocks
+
+
+def get_icons(ttt):
+    icons = []
+    for i in range(3):
+        for j in range(3):
             icon = (127, 127, 127)
             if ttt.cells[j][i] == 'X':
                 icon = (127, 255, 127)
             if ttt.cells[j][i] == 'O':
                 icon = (255, 127, 127)
-            pygame.draw.rect(screen, icon, block)
+            icons.append(icon)
+
+    return icons
+
+
+def draw_board(screen, ttt, blocks):
+    icons = get_icons(ttt)
+    for block, icon in zip(blocks, icons):
+        pygame.draw.rect(screen, icon, block)
 
 
 def main_pg():
@@ -55,62 +70,54 @@ def main_pg():
     screen = pygame.display.set_mode((screen_w, screen_h))
     screen.fill((0, 0, 0))
 
-    draw_board(screen, ttt, 93, 93, 5)
-    pygame.display.flip()
+    blocks = get_blocks(93, 93, 5)
 
-    user_turn = True
+    while ttt.is_game_finished() is None:
+        draw_board(screen, ttt, blocks)
+        pygame.display.flip()
 
-    while True:
-        if user_turn is False:
-            ttt.play(1)
-            draw_board(screen, ttt, 93, 93, 5)
-            pygame.display.flip()
-            user_turn = True
+        if ttt.turn % 2 != 0:
+            ttt.play(-1)
+        else:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONUP:
-                w, h = pygame.mouse.get_pos()
-                total_w = ((w // 10) // 10) + 1
-                total_h = (((h // 10) // 10) * 3)
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pos = pygame.mouse.get_pos()
+                    rect_index = get_rect_index(blocks, pos)
 
-                result = total_w + total_h
-                if result in range(1, 10):
-                    result = ttt.play(result)
-                    if result:
-                        draw_board(screen, ttt, 93, 93, 5)
-                        pygame.display.flip()
-                        user_turn = False
-                    else:
-                        current = 0
-                        for x in range(10):
-                            draw_error(screen, ttt, 93, 93, 5, (total_w - 1, total_h // 3))
-                            pygame.event.pump()
+                    if ttt.play(rect_index) is False:
+                        # Blink rect to indicate invalid move
+                        for x in range(6):
+                            blink = 100 if x % 2 == 0 else 0
+                            draw_error(screen, ttt, blocks, rect_index + blink)
                             pygame.display.flip()
+                            pygame.event.pump()
+                            pygame.time.wait(50)
 
-                            current += pygame.time.get_ticks()
-                            while current > 7000:
+    # # Draw last state of board
+    draw_board(screen, ttt, blocks)
+    pygame.display.flip()
+    pygame.event.pump()
 
-                                draw_board(screen, ttt, 93, 93, 5)
-                                pygame.event.pump()
-                                pygame.display.update()
+    # Display a winner/loser/tie screen
+    winner = ttt.is_game_finished()
+    if winner == 0:
+        print("A Tie!")
+    elif winner == 1:
+        print("You Win!")
+    elif winner == -1:
+        print("You Lost!")
+    input("press a key to end.")
 
-                                current = 0
 
-                    draw_board(screen, ttt, 93, 93, 5)
-                    pygame.display.flip()
-
-        # Display a winner/loser/tie screen
-        is_winner = ttt.check_winner()
-        if is_winner is not None:
-            if is_winner == 0:
-                print("A Tie!")
-            elif is_winner == 1:
-                print("You Win!")
-            elif is_winner == -1:
-                print("You Lost!")
-            break
+def get_rect_index(blocks, pos):
+    needle = 0
+    for index, block in enumerate(blocks, 1):
+        if block.collidepoint(*pos):
+            needle = index
+    return needle
 
 
 if __name__ == "__main__":
