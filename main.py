@@ -6,13 +6,14 @@ import pygame.freetype
 
 from tic_tac_toe import TicTacToe
 
-colour_data_t = namedtuple("colours", "red blue green gray black")
+colour_data_t = namedtuple("colours", "red blue green gray black white")
 COLOURS = colour_data_t(
     red=(255, 127, 127),
     blue=(127, 127, 255),
     green=(127, 255, 127),
     gray=(127, 127, 127),
     black=(0, 0, 0),
+    white=(255, 255, 255),
 )
 
 
@@ -83,8 +84,39 @@ def draw_board(screen, ttt, blocks, mute_pos=-1):
             font.render_to(screen, (x, y), text, COLOURS.black, size=75)
 
 
+def draw_text(surf, text, size, colour, x, y):
+    font_name = pygame.font.match_font('arial')
+    font = pygame.font.Font(font_name, size)
+    text_surface = font.render(text, True, colour)
+    text_rect = text_surface.get_rect()
+    text_rect.midtop = (x, y)
+    surf.blit(text_surface, text_rect)
+
+
+def draw_end_screen(screen, width, height, winner):
+    texts = {
+        1: ("Winner", COLOURS.green),
+        -1: ("Loser", COLOURS.red),
+        0: ("Tie", COLOURS.white),
+    }
+
+    text, colour = texts[winner]
+    block = pygame.Rect(20, 80, 250, height)
+    pygame.draw.rect(screen, COLOURS.black, block)
+    draw_text(screen, "{}!".format(text), 100, colour, width, height)
+    pygame.display.flip()
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    waiting = False
+
+
 def main_pg():
-    ttt = TicTacToe()
+
 
     pygame.init()
     pygame.display.set_caption("Tic Tac Toe")
@@ -96,11 +128,21 @@ def main_pg():
     screen_w = 300
     screen_h = 300
     screen = pygame.display.set_mode((screen_w, screen_h))
-    screen.fill((0, 0, 0))
-
+    # screen.fill((0, 0, 0))
+    ttt = TicTacToe()
     blocks = get_blocks(93, 93, 5)
 
-    while ttt.is_game_finished() is None:
+    while True:
+        is_finished = ttt.is_game_finished()
+        if is_finished is not None:
+            draw_end_screen(screen, 150, 100, is_finished)
+
+            # game variables are reset
+            screen.fill((0, 0, 0))
+            ttt = TicTacToe()
+            draw_board(screen, ttt, blocks)
+            pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -125,19 +167,6 @@ def main_pg():
 
             draw_board(screen, ttt, blocks)
             pygame.display.flip()
-
-    # Ensure last state of board is drawn
-    pygame.event.pump()
-
-    # Display a winner/loser/tie screen
-    winner = ttt.is_game_finished()
-    if winner == 0:
-        print("A Tie!")
-    elif winner == 1:
-        print("You Win!")
-    elif winner == -1:
-        print("You Lost!")
-    input("press a key to end.")
 
 
 if __name__ == "__main__":
